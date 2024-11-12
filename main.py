@@ -23,6 +23,7 @@ class Experiment:
         self.retriever = retrieve_knowledge.RetrieveSources()
         self.extractor = retrieve_knowledge.OpenInformationExtraction()
 
+
     
     def launch_experiment(self,group,seed,size=50):
         sample,rels,counted = self._create_sample(group,seed,size=size)
@@ -34,7 +35,17 @@ class Experiment:
             except Exception as e:
                 log.info(e)
         
-        return all_expanded,rels,counted
+        return rels,all_expanded,counted
+    
+    def _retrieve_wikidata(self):
+        authors = self.authors.entity.to_list()
+        authors = [authors[i:i + 50] for i in range(0, len(authors), 50)]
+        all_claims = list()
+        for item in tqdm(authors):
+            rels,counted = self.wdknow.find_claims(item)
+            all_claims.extend(rels)
+        
+        return all_claims,counted
 
     def _create_sample(self,group:str,seed:int,size:int):
 
@@ -64,29 +75,26 @@ class Experiment:
                             mentions.append(wd)
                 if len(mentions)>0:
                     output = {'author':entity,'sentence':i,'events':events,'mentions':mentions,'n_mentions':len(set(mentions))}
+
                     linked_people.append(output)
             except:continue
 
         return linked_people
 
 
-       
+
+
 
 exp = Experiment()
 
+
+
 l = list()
-for i in [42,883,1914,1985,2020,2005,99,900,300,61]:
-    for j in [0,1]:
-        expanded,rels,counted = exp.launch_experiment(j,seed=i,size=50)
+for i in [42]:
+    
+        rels,expanded,counted = exp.launch_experiment(1,seed=i,size=1)
+        print(rels,expanded,counted)
         
-        avg_exp = sum([x['n_mentions'] for x in expanded])/50  
-
-        l.append({'group':j,'before':np.mean(counted),'after':avg_exp})
-
-
-pd.DataFrame(l).to_csv('data/results.csv',index=False)
-
-
-
+        
 
 

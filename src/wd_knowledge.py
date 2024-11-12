@@ -52,7 +52,7 @@ class Knowledge():
                         if rel[0] in data[person]['claims'].keys():
                             for claim in data[person]['claims'][rel[0]]:
                                 if 'id' in claim['mainsnak']['datavalue']['value']:
-                                    triples.extend((person,rel[0],claim['mainsnak']['datavalue']['value']['id']))
+                                    triples.append((person,rel[0],claim['mainsnak']['datavalue']['value']['id']))
                                     person_rels.append(rel[1])
                                 elif 'time' in claim['mainsnak']['datavalue']['value']:
                                     person_rels.append(rel[1])
