@@ -1,0 +1,11 @@
+prop,label,mapping,o
+P40,child,relationship,PERSON
+P53,family,relationship,PERSON
+P737,influenced by,relationship,PERSON
+P8810,parent,relationship,PERSON
+P1327,partner in business or sport,relationship,PERSON
+P1038,relative,relationship,PERSON
+P3373,sibling,relationship,PERSON
+P26,spouse,relationship,PERSON
+P802,student,relationship,PERSON
+P451,unmarried partner,relationship,PERSON
