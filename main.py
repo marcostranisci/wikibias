@@ -61,7 +61,7 @@ class Experiment:
         req = requests.get('https://en.wikipedia.org/wiki/{}'.format(link))
         soup = BeautifulSoup(req.text,'html.parser')
         page = '\n'.join([x.text for x in soup.find_all('p')])
-        sentences = self.extractor.tokenize_sentences(page)
+        sentences,tokenized = self.extractor.tokenize_sentences(page)
          
         for i,sent in enumerate(sentences):
             mentions = list()

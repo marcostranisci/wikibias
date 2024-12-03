@@ -1,0 +1,13 @@
+/data/all_people.parquet
+/data/authors_links.csv
+/data/enwiki-20241101-pages-articles-multistream.xml.bz2
+/src/event_detection_model.pth
+/.venv/
+/.idea
+.DS_Store
+data/test.py
+/event_detection_model.pth
+/data/all_people.json
+src/__pycache__/model.cpython-310.pyc
+src/__pycache__/retrieve_knowledge.cpython-310.pyc
+src/__pycache__/wd_knowledge.cpython-310.pyc

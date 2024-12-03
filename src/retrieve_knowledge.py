@@ -1,5 +1,7 @@
+import json
+
 from duckduckgo_search import DDGS
-from newsplease import NewsPlease
+#from newsplease import NewsPlease
 from transformers import AutoModelForTokenClassification,AutoTokenizer
 import regex as re
 import torch
@@ -8,7 +10,7 @@ from tqdm import tqdm
 import pandas as pd
 from src.model import Bert4EventExtraction
 from difflib import SequenceMatcher
-
+import os
 
 
 
@@ -34,31 +36,35 @@ class RetrieveSources:
 
         return output
     
-    def get_page_text(self,url):
-        scraped = NewsPlease.from_url(url)
-        try:
-            page_text = scraped.maintext
-        except Exception as e:print(e,url)
-
-        return page_text
+    #def get_page_text(self,url):
+    #    scraped = NewsPlease.from_url(url)
+    #    try:
+    #        page_text = scraped.maintext
+    #    except Exception as e:print(e,url)
+    #
+    #    return page_text
 
 class OpenInformationExtraction:
 
     def __init__(self,sent_tokenizer = 'en_core_web_sm',ev_model='distilbert-base-uncased') -> None:
         self.nlp = spacy.load(sent_tokenizer)
         self.ev_model = Bert4EventExtraction(ev_model,2)
-        self.ev_model.load_state_dict(torch.load('./event_detection_model.pth'))
+        self.ev_model.load_state_dict(torch.load('event_detection_model.pth',map_location=torch.device('cpu')))
         self.tokenizer = AutoTokenizer.from_pretrained(ev_model)
-        self.people = pd.read_parquet('./data/all_people.parquet')
 
-    
+        if os.path.isfile('data/all_people.json'):
+            people = pd.read_parquet('data/all_people.parquet')
+            self.people_name_to_id = {row['o']: row['s'] for _, row in people.iterrows()}  # Faster lookup
+            json.dump(self.people_name_to_id,open("data/all_people.json","w"))
+        else:
+            self.people_name_to_id = json.load(open("data/all_people.json"))
+            #self.people_id_to_label = {row['o']: row['p'] for _, row in people.iterrows()}  # Faster lookup
+
     def tokenize_sentences(self,page_text):
         tokenized = self.nlp(page_text)
 
-        sents = [x.text for x in tokenized.sents]
-        sents = [[x.text for x in self.nlp(sent)] for sent in sents]
-
-        return sents
+        sents = [[x.text for x in sent] for sent in tokenized.sents]
+        return sents, tokenized
     
     def event_detection(self,sentence):
         tokenized = self.tokenizer.encode_plus(sentence,is_split_into_words=True,return_tensors="pt")
@@ -74,19 +80,14 @@ class OpenInformationExtraction:
         return events
     
     def entity_linking(self,sentence):
-        sentence = self.nlp(' '.join(sentence))
 
-        people = [x.text for x in sentence.ents if x.label_ =='PERSON']
-        
+        people = [x.text for x in sentence.ents if x.label_ == 'PERSON']
 
         return people
-    
-    def find_candidates_wiki(self,mention,limit=1,language='en'):
-        kb = self.people.o.to_list()
+
+    def find_candidates_wiki(self, mention, limit=1, language='en'):
         mention = mention.strip()
-        if mention in kb:
-            return self.people[self.people.o==mention].s.values[0]
-        else:return None
+        return self.people_name_to_id.get(mention, None)
 
 
 

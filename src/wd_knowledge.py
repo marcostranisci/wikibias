@@ -6,7 +6,7 @@ from collections import Counter
 
 class Knowledge():
 	
-    def __init__(self,path='./data/people-and-media_cleaned.csv') -> None:
+    def __init__(self,path='data/people-and-media_cleaned.csv') -> None:
         df = pd.read_csv(path)
         self.relations = [(x.prop,x.o) for i,x in df.iterrows()]
 
