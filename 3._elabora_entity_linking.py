@@ -86,7 +86,7 @@ class Experiment:
             except Exception as e:
                 log.error(f"Error processing row 1 {row}: {e}")
         return processed
-    def launch_experiment(self, sample, batch_size=500, num_core=3):
+    def launch_experiment(self, sample, batch_size=100, num_core=3):
         """
         Lancia l'esperimento utilizzando ProcessPoolExecutor e batching.
         """
@@ -117,14 +117,14 @@ class Experiment:
     def _expand_kb(self,row,extractor):
         try:
             entity,link=row
-            log.info(f"{entity} {link} in processing")
 
             linked_people = list()
             out_put_filename=f"output_data/{string_to_hash(link)}.json.gz"
             if os.path.isfile(out_put_filename):
-                log.info(f"{entity} {link} Already done")
+                #log.info(f"{entity} {link} Already done")
 
                 return
+            log.info(f"{entity} {link} in processing")
 
             file_name=f"output/{string_to_hash(link)}.txt.gz"
 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     for row in reader:
         titles.append([row["label"],row["sitelink"]])
     log.info("Start experiment")
-    expanded = exp.launch_experiment(titles,num_core=5)
+    expanded = exp.launch_experiment(titles, batch_size=100, num_core=1)
     print(expanded)
 
 

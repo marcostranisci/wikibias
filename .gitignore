@@ -16,3 +16,5 @@ __pycache__/utils.cpython-310.pyc
 output 2.zip
 output.zip
 /output_data/
+/data/writers_gender.csv
+/data/writers_postcolonial.csv
