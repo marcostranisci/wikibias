@@ -52,7 +52,7 @@ class OpenInformationExtraction:
         self.ev_model.load_state_dict(torch.load('event_detection_model.pth',map_location=torch.device('cpu')))
         self.tokenizer = AutoTokenizer.from_pretrained(ev_model)
 
-        if os.path.isfile('data/all_people.json'):
+        if not os.path.isfile('data/all_people.json'):
             people = pd.read_parquet('data/all_people.parquet')
             self.people_name_to_id = {row['o']: row['s'] for _, row in people.iterrows()}  # Faster lookup
             json.dump(self.people_name_to_id,open("data/all_people.json","w"))
@@ -67,7 +67,7 @@ class OpenInformationExtraction:
         return sents, tokenized
     
     def event_detection(self,sentence):
-        tokenized = self.tokenizer.encode_plus(sentence,is_split_into_words=True,return_tensors="pt")
+        tokenized = self.tokenizer.encode_plus(sentence,is_split_into_words=True,return_tensors="pt",truncation=True)
         tokens = self.tokenizer.convert_ids_to_tokens(tokenized['input_ids'][0])
         tokenized['tokens'] = tokens
         

@@ -11,3 +11,10 @@ data/test.py
 src/__pycache__/model.cpython-310.pyc
 src/__pycache__/retrieve_knowledge.cpython-310.pyc
 src/__pycache__/wd_knowledge.cpython-310.pyc
+/output/
+__pycache__/utils.cpython-310.pyc
+output 2.zip
+output.zip
+/output_data/
+/data/writers_gender.csv
+/data/writers_postcolonial.csv

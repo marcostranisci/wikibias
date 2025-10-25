@@ -1,0 +1,13 @@
+#!/bin/bash
+# Build for AMD64
+# Builder
+version: '3'
+services:
+  foreignauthors:
+    container_name: foreignauthors
+    build: '.'
+    tty: true
+    stdin_open: true
+    volumes:
+        - /home/cc/app2/output_data:/output_data
+        - /home/cc/app2/output:/output
