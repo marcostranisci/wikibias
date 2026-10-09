@@ -18,3 +18,16 @@ output.zip
 /output_data/
 /data/writers_gender.csv
 /data/writers_postcolonial.csv
+
+# Ignore DBpedia Spotlight assets and configuration, but keep its README.
+/dbpedia-spotlight/*
+!/dbpedia-spotlight/README.txt
+!/dbpedia-spotlight/compose.yalm
+.venv/*
+.vscode/*
+event_detection_model.pth
+data/all_people.json
+data/authors_links.csv
+
+__pycache__/
+*.pyc
