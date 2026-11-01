@@ -1,193 +1,114 @@
+"""Step 3: detect biographical events and link the people mentioned in them.
+
+For each author in ``data/authors_links.csv`` the page downloaded by steps 1-2
+(``output/<hash>.txt.gz``) is processed as follows:
+
+1. biographical event detection   -> ``wikibias.event_detection``
+2. person mentions in event sentences are linked to Wikidata
+   (candidate extraction + entity linking) -> ``wikibias.entity_linking``
+
+Results go to ``output_data/<hash>.json.gz``. Network analysis on these files
+lives in ``wikibias.network``.
+
+Usage:
+    python 3._perform_entity_linking.py [--shard 0 --num-shards 4]
+"""
+
+import argparse
 import csv
-import glob
 import gzip
 import json
-import os.path
-from concurrent.futures import ProcessPoolExecutor, as_completed, ThreadPoolExecutor
-import traceback
-from src import retrieve_knowledge,wd_knowledge
-import pandas as pd
-import random, requests
-import numpy as np
-from bs4 import BeautifulSoup
-from difflib import SequenceMatcher
-from tqdm import tqdm
 import logging as log
-import mwparserfromhell
-import wikipediaapi
-from src.retrieve_knowledge import RetrieveSources, OpenInformationExtraction
-from src.wd_knowledge import Knowledge
+import os
+import traceback
+from itertools import groupby
+
+from tqdm import tqdm
+
 from utils import string_to_hash
-
-
-def clean_wikitext(wikitext):
-    """
-    Remove MediaWiki markup from wikitext and return readable text.
-    """
-    # Parse the wikitext into a structure that can be edited.
-    wikicode = mwparserfromhell.parse(wikitext)
-
-    # Remove templates (for example, {{...}}).
-    templates = wikicode.filter_templates()
-    for template in templates:
-        wikicode.remove(template)
-    #print(wikicode.filter_wikilinks())
-    # Remove internal and external links.
-    for link in wikicode.filter_wikilinks():
-        try:
-            wikicode.remove(link)
-        except:
-            continue
-    for external_link in wikicode.filter_external_links():
-        wikicode.remove(external_link)
-
-    # Remove any remaining markup, including HTML tags.
-    cleaned_text = wikicode.strip_code()
-
-    # Return the cleaned text.
-    return str(cleaned_text).strip()
+from wikibias.candidate_extraction import WikipediaSearchCandidateExtractor
+from wikibias.entity_linking import HeuristicEntityLinker
+from wikibias.event_detection import BertEventDetector
 
 log.basicConfig(
-    encoding='utf-8',
+    encoding="utf-8",
     level=log.INFO,
-    format='%(asctime)s %(message)s',
-    datefmt='%m/%d/%Y %I:%M:%S %p'
+    format="%(asctime)s %(levelname)s %(message)s",
+    datefmt="%m/%d/%Y %I:%M:%S %p",
 )
 
-random.seed(30081993)
 
-class Experiment:
-    def __init__(self) -> None:
-        self.authors = pd.read_csv('./data/authors_links.csv')
-
-    def batch_data(self, data, batch_size):
-        """
-        Split the input data into batches of the requested size.
-        """
-        for i in range(0, len(data), batch_size):
-            yield data[i:i + batch_size]
+def read_page(path: str) -> str:
+    """Pages from steps 1-2: title on the first line, then the page text."""
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        f.readline()
+        return f.read()
 
 
-    def process_batch(self, batch):
-        """
-        Process a single batch of rows.
-        """
-
-        log.error(f"Pre OpenInformationExtraction")
-        batch_extractor = OpenInformationExtraction()
-        log.error(f"Post OpenInformationExtraction")
-
-        processed = []
-        for row in batch:
-            try:
-                result = self._expand_kb(row,batch_extractor)
-                if result:
-                    processed.append(result)
-            except Exception as e:
-                log.error(f"Error processing row 1 {row}: {e}")
-        return processed
-    def launch_experiment(self, sample, batch_size=100, num_core=3):
-        """
-        Run the experiment on batches using a thread pool.
-        """
-        log.info("Dividing data into batches.")
-        batches = list(self.batch_data(sample, batch_size))
-        print("Number of batches",len(batches))
-
-        log.info(f"Processing {len(batches)} batches with {num_core} cores.")
-
-        all_results = []
-        with ThreadPoolExecutor(max_workers=num_core) as executor:
-            # Submit each batch to the thread pool.
-            futures = {executor.submit(self.process_batch, batch): batch for batch in batches}
-
-            # Collect completed batches while displaying progress.
-            for future in tqdm(as_completed(futures), total=len(futures)):
-                try:
-                    batch_result = future.result()
-                    #all_results.extend(batch_result)
-                except Exception as e:
-                    log.error(f"Error processing batch: {e}")
-
-        return all_results
+def process_author(wikidata_id, page, detector, linker):
+    events = detector.detect(wikidata_id, page)
+    records = []
+    for sentence_index, group in groupby(events, key=lambda e: e.sentence_index):
+        group = list(group)
+        mentions = [m for m in linker.link(group[0].sentence) if m.wikidata_id != wikidata_id]
+        if not mentions:
+            continue
+        records.append({
+            "author": wikidata_id,
+            "sentence_index": sentence_index,
+            "sentence": group[0].sentence,
+            "events": [e.trigger for e in group],
+            "mentions": [m.to_dict() for m in mentions],
+            "n_mentions": len({m.wikidata_id for m in mentions}),
+        })
+    return records
 
 
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--authors", default="data/authors_links.csv")
+    parser.add_argument("--id-column", default="entity", help="column with the Wikidata ID")
+    parser.add_argument("--title-column", default="sitelink", help="column with the Wikipedia title")
+    parser.add_argument("--input-dir", default="output")
+    parser.add_argument("--output-dir", default="output_data")
+    parser.add_argument("--model", default="event_detection_model.pth")
+    parser.add_argument("--top-k", type=int, default=3)
+    parser.add_argument("--threshold", type=float, default=0.8)
+    parser.add_argument("--shard", type=int, default=0)
+    parser.add_argument("--num-shards", type=int, default=1)
+    args = parser.parse_args()
 
+    with open(args.authors, encoding="utf-8") as f:
+        authors = [(row[args.id_column], row[args.title_column]) for row in csv.DictReader(f)]
+    authors = authors[args.shard::args.num_shards]
+    os.makedirs(args.output_dir, exist_ok=True)
 
-    def _expand_kb(self,row,extractor):
+    detector = BertEventDetector(model_path=args.model)
+    linker = HeuristicEntityLinker(
+        WikipediaSearchCandidateExtractor(top_k=args.top_k),
+        threshold=args.threshold,
+        nlp=detector.nlp,
+    )
+
+    for wikidata_id, title in tqdm(authors):
+        page_hash = string_to_hash(title)
+        out_path = os.path.join(args.output_dir, f"{page_hash}.json.gz")
+        in_path = os.path.join(args.input_dir, f"{page_hash}.txt.gz")
+        if os.path.isfile(out_path):
+            continue
+        if not os.path.isfile(in_path):
+            log.error("%s %s: page not found (%s)", wikidata_id, title, in_path)
+            continue
         try:
-            entity,link=row
-
-            linked_people = list()
-            out_put_filename=f"output_data/{string_to_hash(link)}.json.gz"
-            if os.path.isfile(out_put_filename):
-                #log.info(f"{entity} {link} Already done")
-
-                return
-            log.info(f"{entity} {link} in processing")
-
-            file_name=f"output/{string_to_hash(link)}.txt.gz"
-
-            if not os.path.isfile(file_name):
-                log.error(f"{entity} {link} Not found")
-                return
-            file = gzip.open(file_name,"rt")
-
-            page=clean_wikitext(file.read())
-            # Limit the input size to keep sentence processing manageable.
-            if len(page)>100000:
-             page=page[0:100000]
-            sentences,tokenized = extractor.tokenize_sentences(page)
-
-            for i,sent in enumerate(sentences):
-
-                mentions = list()
-                events = extractor.event_detection(sent)
-                try:
-                    if len(events)>0:
-                        # Link entities only in sentences where an event was detected.
-                        people = extractor.entity_linking(tokenized)
-                        for person in people:
-                            wd = extractor.find_candidates_wiki(person)
-                            if wd is not None and wd !=entity:
-                                mentions.append(wd)
-                    if len(mentions)>0:
-                        output = {'author':entity,'sentence':i,'events':events,'mentions':mentions,'n_mentions':len(set(mentions))}
-
-                        linked_people.append(output)
-
-                except:
-                    traceback.print_exc()
-                    continue
-            #print(linked_people)
-            data={ "result" : linked_people}
-            # Save the extracted event and entity-linking results as compressed JSON.
-            json.dump(data,gzip.open(out_put_filename,"wt"),indent=4)
-            # Continue with any additional processing here.
-        except Exception as e:
-            log.error(f"Error processing row 2 {row}: {e}")
+            records = process_author(wikidata_id, read_page(in_path), detector, linker)
+        except Exception:
+            log.error("%s %s: failed", wikidata_id, title)
             traceback.print_exc()
-
-        return
-
-
+            continue
+        with gzip.open(out_path, "wt", encoding="utf-8") as f:
+            json.dump({"result": records}, f, indent=4, ensure_ascii=False)
+        log.info("%s %s: %d event sentences with people", wikidata_id, title, len(records))
 
 
 if __name__ == "__main__":
-
-    exp = Experiment()
-
-    l = list()
-    titles = []
-    file=open("data/authors_links.csv")
-    log.info("Reading authors")
-    reader= csv.DictReader(file, delimiter=",", quotechar="\"")
-    for row in reader:
-        titles.append([row["label"],row["sitelink"]])
-    log.info("Start experiment")
-    expanded = exp.launch_experiment(titles, batch_size=100, num_core=1)
-    print(expanded)
-
-
-
-
+    main()

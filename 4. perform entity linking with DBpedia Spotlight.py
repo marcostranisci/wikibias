@@ -11,14 +11,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import mwparserfromhell
 import pandas as pd
-import spacy
 import spacy_dbpedia_spotlight  # noqa: F401
-import torch
 from tqdm import tqdm
 
-from src.model import Bert4EventExtraction
-from src.retrieve_knowledge import OpenInformationExtraction
 from utils import string_to_hash
+from wikibias.event_detection import BertEventDetector
 
 
 # ============================================================
@@ -84,10 +81,10 @@ PERSON_TYPES = (
 # DBPEDIA SPOTLIGHT + OPEN INFORMATION EXTRACTION
 # ============================================================
 
-class OpenInformationExtractionDBpedia(OpenInformationExtraction):
+class OpenInformationExtractionDBpedia:
     """
-    OpenInformationExtraction variant that uses DBpedia Spotlight
-    instead of spaCy NER to detect and link person mentions.
+    Event detection (wikibias.event_detection) combined with DBpedia
+    Spotlight instead of spaCy NER to detect and link person mentions.
     """
 
     def __init__(
@@ -97,10 +94,16 @@ class OpenInformationExtractionDBpedia(OpenInformationExtraction):
         confidence=DBPEDIA_CONFIDENCE,
         dbpedia_endpoint=DBPEDIA_ENDPOINT,
     ):
-        log.info("Loading spaCy model: %s", sent_tokenizer)
+        log.info("Loading event detection model: %s", ev_model)
 
-        # Skip the parent initializer to avoid loading spaCy twice.
-        self.nlp = spacy.load(sent_tokenizer)
+        self.event_detector = BertEventDetector(
+            model_path=EVENT_MODEL_PATH,
+            base_model=ev_model,
+            spacy_model=sent_tokenizer,
+        )
+
+        # Reuse the detector's spaCy pipeline and add DBpedia Spotlight to it.
+        self.nlp = self.event_detector.nlp
 
         log.info(
             "Adding DBpedia Spotlight component. Endpoint: %s",
@@ -114,23 +117,6 @@ class OpenInformationExtractionDBpedia(OpenInformationExtraction):
                 "dbpedia_rest_endpoint": dbpedia_endpoint,
             },
         )
-
-        log.info("Loading event extraction model: %s", ev_model)
-
-        self.ev_model = Bert4EventExtraction(ev_model, 2)
-
-        self.ev_model.load_state_dict(
-            torch.load(
-                EVENT_MODEL_PATH,
-                map_location=torch.device("cpu"),
-            )
-        )
-
-        self.ev_model.eval()
-
-        from transformers import AutoTokenizer
-
-        self.tokenizer = AutoTokenizer.from_pretrained(ev_model)
 
         # --------------------------------------------------------
         # Load the people lookup table
@@ -181,6 +167,21 @@ class OpenInformationExtractionDBpedia(OpenInformationExtraction):
             "Loaded %d people mappings",
             len(self.people_name_to_id),
         )
+
+    # ------------------------------------------------------------
+    # Sentence splitting and event detection
+    # ------------------------------------------------------------
+
+    def tokenize_sentences(self, page_text):
+        tokenized = self.nlp(page_text)
+        sents = [[token.text for token in sent] for sent in tokenized.sents]
+        return sents, tokenized
+
+    def event_detection(self, sentence_tokens):
+        return [
+            trigger
+            for _, trigger in self.event_detector.detect_in_tokens(sentence_tokens)
+        ]
 
     # ------------------------------------------------------------
     # Entity linking
@@ -642,6 +643,8 @@ class Experiment:
                 extractor.tokenize_sentences(page)
             )
 
+            sentence_spans = list(tokenized.sents)
+
             log.info(
                 "%s: %d sentences",
                 entity,
@@ -670,7 +673,7 @@ class Experiment:
                     # ------------------------------------------------
 
                     people = extractor.entity_linking(
-                        tokenized[i]
+                        sentence_spans[i]
                     )
 
                     for person in people:

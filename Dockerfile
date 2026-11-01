@@ -10,8 +10,8 @@ RUN pip3 install -r requirements.txt
 ADD event_detection_model.pth event_detection_model.pth
 ADD utils.py utils.py
 ADD data data
-ADD src/ src/
-ADD 3._elabora_entity_linking.py main.py
+ADD wikibias/ wikibias/
+ADD 3._perform_entity_linking.py main.py
 
 RUN mkdir output
 RUN mkdir output_data

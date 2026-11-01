@@ -19,6 +19,7 @@ filelock==3.16.1
 fsspec==2024.10.0
 huggingface-hub==0.26.2
 idna==3.10
+igraph==0.11.8
 Jinja2==3.1.4
 jsonable==0.3.1
 jsonschema==4.23.0
@@ -68,6 +69,7 @@ requests==2.32.3
 rich==13.9.4
 rpds-py==0.21.0
 safetensors==0.4.5
+scipy==1.14.1
 setuptools==84.0.0
 shellingham==1.5.4
 six==1.16.0

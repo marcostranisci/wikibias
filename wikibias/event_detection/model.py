@@ -1,20 +1,8 @@
 import torch.nn as nn
 from transformers import AutoConfig,AutoModel
-from typing import Tuple
 from torch.nn import CrossEntropyLoss
 
-'''wandb.init(project="event_extraction", entity="strano85")
 
-wandb.config = {
-  "learning_rate": 0.001,
-  "epochs": 10,
-  "batch_size": 10
-}
-
-wandb.log({"loss": loss})
-
-# Optional
-wandb.watch(model)'''
 
 class Bert4EventExtraction(nn.Module):
 
