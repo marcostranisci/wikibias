@@ -166,3 +166,40 @@ def edge_event_counts(graph: nx.DiGraph) -> Counter:
     for _, _, data in graph.edges(data=True):
         counts.update(split_events(data.get("event")))
     return counts
+
+
+# ----------------------------------------------------------------------
+# Generic groups (any categorical node attribute)
+# ----------------------------------------------------------------------
+
+def groups_by_attributes(graph: nx.Graph, attributes: list[str], node_filter: NodeFilter = is_writer,
+                         missing: str = "N/D") -> dict[str, set[str]]:
+    """Group the nodes passing ``node_filter`` by each attribute and by the
+    combination of all attributes, e.g. ``{"gender=female": {...},
+    "origin=x|gender=female": {...}}``. Missing values are skipped."""
+    groups: dict[str, set[str]] = {}
+    for node, data in graph.nodes(data=True):
+        if not node_filter(data):
+            continue
+        values = {a: data.get(a, missing) for a in attributes}
+        for a, v in values.items():
+            if v != missing:
+                groups.setdefault(f"{a}={v}", set()).add(node)
+        if len(attributes) > 1 and missing not in values.values():
+            groups.setdefault("|".join(f"{a}={v}" for a, v in values.items()), set()).add(node)
+    return groups
+
+
+def density_table(graph: nx.DiGraph, groups: dict[str, set[str]]) -> list[dict]:
+    """Intra-group density, and inter-group density towards the rest of
+    ``graph`` (restrict ``graph`` first, e.g. to writers, if needed)."""
+    everyone = set(graph.nodes)
+    return [
+        {
+            "group": name,
+            "size": len(members),
+            "intra_density": intra_group_density(graph, members),
+            "inter_density_vs_rest": inter_group_density(graph, members, everyone - members),
+        }
+        for name, members in groups.items()
+    ]

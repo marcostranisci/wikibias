@@ -7,6 +7,42 @@ experiments related to the reduction of underrepresentation
 * Copy the file [all_people.parquet](https://drive.google.com/file/d/1JDN7ygIEju50ozvFTC7c52Gh27NDrOg4/view?usp=drive_link) in the folder data/
 * Copy the [biographical event detection model](https://drive.google.com/file/d/1KWGphIp7HV39RWmGxp7_KuMxNhX-TSTi/view?usp=drive_link) in the root directory as `event_detection_model.pth`
 
+## Augment the KG and analyse the network
+
+`augment_kg.py` runs everything in one go: event detection, entity linking,
+Wikidata relations, augmented KG and network analysis.
+
+```bash
+export WIKIMEDIA_CONTACT="your.email@example.org"
+python augment_kg.py --authors data/authors.csv --biographies output/ \
+    --model event_detection_model.pth --output-dir results/
+```
+
+* `--authors`: CSV with the author's Wikidata ID, origin and gender (columns
+  `entity`, `origin`, `gender` by default; change them with `--id-column`,
+  `--origin-column`, `--gender-column`). An optional `label` column gives names.
+* `--biographies`: a folder with `<QID>.txt` / `<QID>.txt.gz` files (or the
+  `output/` folder of steps 1-2 if the authors CSV has a `sitelink` column),
+  or a `.jsonl`/`.json`/`.csv` file with `entity` and `text` fields.
+* `--existing-kb`: optional `s,p,o` CSV of Wikidata relations; otherwise they
+  are fetched from Wikidata.
+
+Outputs in `--output-dir`:
+
+* `kg/`: `base_triples.csv` (Wikidata), `extracted_triples.csv` (from text,
+  with sentence and linking details), `augmented_triples.csv` (both, with a
+  `source` column), and the three networks as GraphML.
+* `analysis/authors.csv`: per author, people linked on Wikidata, in the text,
+  in the augmented KG, and how many the text adds.
+* `analysis/<base|extended|augmented>/`: `summary.json` (size, giant
+  component, attribute distributions), `rankings.csv` (top nodes by in-degree,
+  PageRank, closeness, betweenness, overall and per origin/gender group),
+  `densities.csv` (intra/inter-group density among writers), `edge_events.csv`,
+  and `path_events.csv` with `--path-events`.
+* `extraction/`: per-author extraction, reused when the script is run again.
+
+Run `python augment_kg.py --help` for all options.
+
 ## Code structure
 
 The `wikibias` package has one module per step. Modules do not import each
