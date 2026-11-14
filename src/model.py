@@ -1,3 +1,5 @@
+# Define neural models for event extraction.
+
 import torch.nn as nn
 from transformers import AutoConfig,AutoModel
 from typing import Tuple

@@ -1,0 +1,9 @@
+category,authors
+total_unique_authors,105970
+included,96142
+excluded_total,9828
+unmatched,8062
+gold_missing,0
+gold_conflicting,17
+criteria_missing,1009
+criteria_conflicting,1560

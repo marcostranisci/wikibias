@@ -1,0 +1,17 @@
+category,authors
+excluded_total,9828
+unmatched,8062
+gold_missing,0
+gold_conflicting,17
+criteria_missing,1009
+criteria_conflicting,1560
+transnational_missing,0
+transnational_conflicting,17
+FormerColony_missing,0
+FormerColony_conflicting,412
+minority_missing,0
+minority_conflicting,0
+HDI_category_missing,1009
+HDI_category_conflicting,1426
+passport_bin_missing,305
+passport_bin_conflicting,1380

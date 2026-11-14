@@ -1,8 +1,12 @@
+# Run entity linking over the selected author sample.
+
 import csv
 import glob
 import gzip
 import json
-import os.path
+import os
+import tempfile
+import zlib
 from concurrent.futures import ProcessPoolExecutor, as_completed, ThreadPoolExecutor
 import traceback
 from src import retrieve_knowledge,wd_knowledge
@@ -17,7 +21,7 @@ import mwparserfromhell
 import wikipediaapi
 from src.retrieve_knowledge import RetrieveSources, OpenInformationExtraction
 from src.wd_knowledge import Knowledge
-from utils import string_to_hash
+from utils import output_data_path, string_to_hash
 
 
 def clean_wikitext(wikitext):
@@ -119,11 +123,17 @@ class Experiment:
             entity,link=row
 
             linked_people = list()
-            out_put_filename=f"output_data/{string_to_hash(link)}.json.gz"
+            out_put_filename = output_data_path(f"{string_to_hash(link)}.json.gz")
+            os.makedirs(os.path.dirname(out_put_filename), exist_ok=True)
             if os.path.isfile(out_put_filename):
-                #log.info(f"{entity} {link} Already done")
-
-                return
+                try:
+                    with gzip.open(out_put_filename, "rt", encoding="utf-8") as existing_file:
+                        existing_data = json.load(existing_file)
+                    if isinstance(existing_data, dict) and isinstance(existing_data.get("result"), list):
+                        return
+                except (gzip.BadGzipFile, EOFError, OSError, UnicodeDecodeError, json.JSONDecodeError, zlib.error):
+                    pass
+                log.warning("Regenerating invalid entity-linking output: %s", out_put_filename)
             log.info(f"{entity} {link} in processing")
 
             file_name=f"output/{string_to_hash(link)}.txt.gz"
@@ -162,7 +172,15 @@ class Experiment:
             #print(linked_people)
             data={ "result" : linked_people}
             # Save the extracted event and entity-linking results as compressed JSON.
-            json.dump(data,gzip.open(out_put_filename,"wt"),indent=4)
+            with tempfile.NamedTemporaryFile(dir=os.path.dirname(out_put_filename), delete=False) as temporary_file:
+                temporary_path = temporary_file.name
+            try:
+                with gzip.open(temporary_path, "wt", encoding="utf-8") as output_file:
+                    json.dump(data, output_file, indent=4)
+                os.replace(temporary_path, out_put_filename)
+            finally:
+                if os.path.exists(temporary_path):
+                    os.unlink(temporary_path)
             # Continue with any additional processing here.
         except Exception as e:
             log.error(f"Error processing row 2 {row}: {e}")
@@ -187,7 +205,4 @@ if __name__ == "__main__":
     log.info("Start experiment")
     expanded = exp.launch_experiment(titles, batch_size=100, num_core=1)
     print(expanded)
-
-
-
 

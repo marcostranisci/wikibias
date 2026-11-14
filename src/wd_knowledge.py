@@ -1,3 +1,5 @@
+# Load and query the local Wikidata knowledge base.
+
 import requests,json
 import pandas as pd
 from tqdm import tqdm

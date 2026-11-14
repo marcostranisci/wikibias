@@ -14,7 +14,7 @@ ADD src/ src/
 ADD 3._elabora_entity_linking.py main.py
 
 RUN mkdir output
-RUN mkdir output_data
+RUN mkdir -p data/output_data
 
 
 CMD ["python3.10", "main.py"]

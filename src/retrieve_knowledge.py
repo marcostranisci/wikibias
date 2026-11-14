@@ -1,3 +1,5 @@
+# Retrieve web sources and Wikidata knowledge for entities.
+
 import json
 
 from duckduckgo_search import DDGS

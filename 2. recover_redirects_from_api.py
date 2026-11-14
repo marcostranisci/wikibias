@@ -1,3 +1,5 @@
+# Retrieve missing page content and redirects from Wikipedia.
+
 import gzip
 import re
 import time
@@ -50,7 +52,7 @@ for file_name in glob.glob("output/*"):
     elif "redirect [" in first_line.lower() or "redirect[" in first_line.lower():
         pattern = r'\[\[(.*?)\]\]'
 
-        # Trova tutte le corrispondenze
+        # Find all matches.
         redirect = re.findall(pattern, first_line)[0]
         # Fetch the redirect target but keep the original title in the output file.
         i += 1
