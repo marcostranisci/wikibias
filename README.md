@@ -7,7 +7,7 @@ events between author groups.
 ## Prepare the repo
 
 * Copy the file [authors_links.csv](https://drive.google.com/file/d/1EsZmlv4yTUll5E7E-EJpKJzYKCKUNQ99/view?usp=drive_link) in the folder data/
-* Copy the [biographical event detection model](https://drive.google.com/file/d/1KWGphIp7HV39RWmGxp7_KuMxNhX-TSTi/view?usp=drive_link) in the root directory as `event_detection_model.pth`
+* Copy the [biographical event detection model](https://drive.google.com/file/d/1zrOCqFg_EhsHWkzRsxNZYKntEAMJLEuK/view?usp=sharing) in the root directory as `event_detection_model.pth`
 
 ## Augment the KG and analyse the network
 
