@@ -55,7 +55,7 @@ import networkx as nx
 import pandas as pd
 from tqdm import tqdm
 
-from utils import string_to_hash
+from wikibias.text import string_to_hash
 from wikibias.network import analysis
 from wikibias.network.build import (
     NodeAttributes,

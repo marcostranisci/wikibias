@@ -1,0 +1,20 @@
+\begin{table*}
+    \centering
+    \small
+    \begin{tabular}{l|c|c|p{5.2cm}|p{5.2cm}}
+        \toprule
+        \textbf{Pair} & \textbf{JSD} & \textbf{Excess} & \textbf{Group 1} & \textbf{Group 2} \\
+        \midrule
+        Transnational \textit{vs} Western & 0.045 & 0.021 & starring, debut, sung, award, translated, is, career, started, awarded, directed & wrote, died, appeared, hired, met, collected, married, moved, friend, lived \\
+        Women \textit{vs} Men & 0.034 & 0.018 & married, born, marriage, moved, published, mother, lived, daughter, relationship, divorced & directed, father, direct, son, directing, brother, produced, actor, producer, influenced \\
+        T. Women \textit{vs} T. Men & 0.086 & 0.016 & married, daughter, published, mother, appeared, lived, divorced, born, falls, focuses & directed, son, actor, sung, composed, brother, association, failure, success, directing \\
+        T. Women \textit{vs} W. Men & 0.083 & 0.033 & translated, daughter, mother, award, awarded, participated, received, is, degree, awards & wrote, hired, directed, son, father, befriended, producing, known, assigned, directing \\
+        T. Women \textit{vs} W. Women & 0.080 & 0.021 & translated, award, reach, participated, recipient, awarded, debut, expressed, won, awards & married, died, wrote, born, moved, met, marriage, lived, friends, hired \\
+        W. Women \textit{vs} W. Men & 0.037 & 0.020 & married, born, marriage, moved, published, lived, mother, daughter, met, relationship & directed, father, direct, directing, son, brother, produced, defeated, influenced, actor \\
+        W. Women \textit{vs} T. Men & 0.076 & 0.039 & married, born, moved, met, lived, died, appeared, marriage, published, divorced & directed, starring, sung, actor, son, director, made, started, debut, composed \\
+        T. Men \textit{vs} W. Men & 0.053 & 0.023 & starring, sung, debut, career, directed, is, award, started, released, composed & wrote, appeared, hired, collected, met, died, purchased, created, friend, lived \\
+        \bottomrule
+    \end{tabular}
+    \caption{Pairwise comparison of biographical events between socio-demographic groups. JSD is the Jensen-Shannon divergence (base 2) between the event distributions of the two groups; \textit{Excess} is the JSD minus the value expected by chance (the mean over $10{,}000$ permutations of group labels across authors), which corrects for the inflation of JSD in small groups. All divergences are significant ($p < 0.0001$, permutation test). For each group, the $10$ events contributing most to the JSD among those more frequent in that group and significant after Benjamini-Hochberg correction (FDR $< 0.05$; events occurring at least $20$ times).}
+    \label{tab:jsd_comparison}
+\end{table*}

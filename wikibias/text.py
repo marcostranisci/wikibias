@@ -1,4 +1,10 @@
 """Shared text helpers."""
+import hashlib
+
+
+def string_to_hash(input_string: str) -> str:
+    """SHA-256 of a string, used to name per-page files."""
+    return hashlib.sha256(input_string.encode("utf-8")).hexdigest()
 
 
 def clean_wikitext(wikitext: str) -> str:
