@@ -2,8 +2,6 @@
 event_detection_model.pth
 /data/networks/
 /data/output_data/
-data/authors_links.csv
-/data/authors_links.csv
 
 __pycache__/
 *.pyc

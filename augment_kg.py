@@ -74,8 +74,11 @@ NETWORKS = ("base", "extended", "augmented")
 # ======================================================================
 
 def load_authors(path, id_column, origin_column, gender_column, label_column=None):
-    """Read the authors CSV; returns a DataFrame indexed by Wikidata ID."""
-    df = pd.read_csv(path, dtype=str)
+    """Read the authors CSV or Parquet file; returns a DataFrame indexed by Wikidata ID."""
+    if str(path).endswith(".parquet"):
+        df = pd.read_parquet(path)
+    else:
+        df = pd.read_csv(path, dtype=str)
     missing = [c for c in (id_column, origin_column, gender_column) if c not in df.columns]
     if missing:
         raise ValueError(f"{path} has no column(s) {missing}; columns are {list(df.columns)}")
@@ -382,7 +385,7 @@ def run(args, make_components=None, fetch_base_kg=None, fetch_labels=wikidata_la
 
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--authors", required=True, help="CSV with author IDs, origin and gender")
+    p.add_argument("--authors", required=True, help="CSV or Parquet file with author IDs, origin and gender")
     p.add_argument("--biographies", required=True, help="directory or .jsonl/.json/.csv file")
     p.add_argument("--output-dir", default="results")
     p.add_argument("--id-column", default="entity")

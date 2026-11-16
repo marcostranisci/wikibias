@@ -48,7 +48,7 @@ class NodeAttributes:
     @classmethod
     def from_files(
         cls,
-        authors_csv: str = "data/authors_links.csv",
+        authors_csv: str = "data/authors_links.parquet",
         gender_csv: str | None = "data/writers_gender.csv",
         postcolonial_csv: str | None = "data/writers_postcolonial.csv",
         labels_csv: str | None = "data/entity_labels.csv",
@@ -58,7 +58,10 @@ class NodeAttributes:
         def exists(path):
             return path is not None and os.path.isfile(path)
 
-        authors = pd.read_csv(authors_csv, dtype=str)
+        if str(authors_csv).endswith(".parquet"):
+            authors = pd.read_parquet(authors_csv)
+        else:
+            authors = pd.read_csv(authors_csv, dtype=str)
         attrs = cls(writers=set(authors["entity"]))
         attrs.attributes["transnational"] = dict(zip(authors["entity"], authors["transnational"]))
 
@@ -78,11 +81,12 @@ class NodeAttributes:
             ]:
                 attrs.attributes[name] = dict(zip(df["s"], df[column]))
 
-        for path in (labels_csv, authors_csv):
-            if exists(path):
-                with open(path, encoding="utf-8") as f:
-                    for row in csv.DictReader(f):
-                        attrs.labels[row["entity"]] = row["label"]
+        if exists(labels_csv):
+            with open(labels_csv, encoding="utf-8") as f:
+                for row in csv.DictReader(f):
+                    attrs.labels[row["entity"]] = row["label"]
+        # Author labels override the general ones.
+        attrs.labels.update(zip(authors["entity"], authors["label"].fillna("")))
 
         if exists(to_be_removed_csv):
             with open(to_be_removed_csv, encoding="utf-8") as f:

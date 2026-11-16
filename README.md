@@ -6,8 +6,11 @@ events between author groups.
 
 ## Prepare the repo
 
-* Copy the file [authors_links.csv](https://drive.google.com/file/d/1EsZmlv4yTUll5E7E-EJpKJzYKCKUNQ99/view?usp=drive_link) in the folder data/
 * Copy the [biographical event detection model](https://drive.google.com/file/d/1zrOCqFg_EhsHWkzRsxNZYKntEAMJLEuK/view?usp=sharing) in the root directory as `event_detection_model.pth`
+
+`data/authors_links.parquet` (in the repo) lists the authors: `entity`
+(Wikidata ID), `label`, `transnational` (`1`/`0`), `sitelink` (English
+Wikipedia title).
 
 ## Augment the KG and analyse the network
 
