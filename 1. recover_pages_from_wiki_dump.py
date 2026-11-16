@@ -1,3 +1,5 @@
+# Extract selected pages from a compressed Wikipedia dump.
+
 import bz2
 import gzip
 

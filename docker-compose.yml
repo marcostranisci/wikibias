@@ -9,5 +9,5 @@ services:
     tty: true
     stdin_open: true
     volumes:
-        - /home/cc/app2/output_data:/output_data
+        - /home/cc/app2/data/output_data:/data/output_data
         - /home/cc/app2/output:/output

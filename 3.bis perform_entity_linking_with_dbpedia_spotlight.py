@@ -1,3 +1,5 @@
+# Link entities with DBpedia Spotlight and detect biographical events.
+
 import csv
 import gzip
 import json

@@ -21,4 +21,4 @@ After extraction, the folder should contain the following files and directories 
 		`-- stopwords.list
 
 
-Run DBpedia Spotlight using Docker to execute 4. perform entity linking with DBpedia Spotlight.py.
+Run DBpedia Spotlight using Docker to execute 4. perform_entity_linking_with_dbpedia_spotlight.py.

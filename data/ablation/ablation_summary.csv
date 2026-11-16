@@ -1,0 +1,6 @@
+Experiment,Original_transnational,New_transnational,Changed_classifications,Changed_percentage,Cohen_Kappa,F1_score
+Full model,20391,25661,11962,7.0,0.7004,0.7403
+Without Former Colony,20391,1980,22125,12.95,-0.0104,0.011
+Without Ethnic Minority,20391,23910,10219,5.98,0.7352,0.7693
+Without HDI,20391,25661,11962,7.0,0.7004,0.7403
+Without Passport Mobility,20391,19775,11946,6.99,0.663,0.7026

@@ -11,10 +11,10 @@ ADD event_detection_model.pth event_detection_model.pth
 ADD utils.py utils.py
 ADD data data
 ADD wikibias/ wikibias/
-ADD 3._perform_entity_linking.py main.py
+ADD ["3. perform_entity_linking.py", "main.py"]
 
 RUN mkdir output
-RUN mkdir output_data
+RUN mkdir -p data/output_data
 
 
 CMD ["python3.10", "main.py"]
